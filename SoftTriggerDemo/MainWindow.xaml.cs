@@ -8,7 +8,7 @@ using Sentech.StApiDotNET;
 
 namespace SoftTriggerDemo
 {
-    public partial class MainWindow : Window, IDisposable
+    public partial class MainWindow : IDisposable
     {
         public MainWindow()
         {
@@ -78,8 +78,7 @@ namespace SoftTriggerDemo
                 }
 
                 this.Stopwatch.Stop();
-                this.Dispatcher.Invoke(() => LatencyText.Text = $"Latency: {this.Stopwatch.ElapsedMilliseconds:F0} ms");
-
+                this.Dispatcher.Invoke(() => LatencyText.Text = $"Latency: {this.Stopwatch.ElapsedMilliseconds} ms");
 
                 var rawImage = streamBuffer.GetIStImage();
 
