@@ -28,8 +28,8 @@ namespace SoftTriggerDemo
             var nodeMap = this.Device.GetRemoteIStPort().GetINodeMap();
             Trace.Assert(nodeMap.SetEnumValue("TriggerSelector", "FrameStart"));
             Trace.Assert(nodeMap.SetEnumValue("TriggerMode", "On"));
-            Trace.Assert(nodeMap.SetEnumValue("TriggerSource", "Software"));
-            this.TriggerCommand = nodeMap.GetNode<ICommand>("TriggerSoftware");
+            Trace.Assert(nodeMap.SetEnumValue("TriggerSource", "Line0"));
+            //this.TriggerCommand = nodeMap.GetNode<ICommand>("TriggerSoftware");
 
             this.DataStream.RegisterCallbackMethod(this.OnCallback);
             this.DataStream.StartAcquisition();
@@ -129,7 +129,7 @@ namespace SoftTriggerDemo
 
         private void TriggerButton_Click(object sender, RoutedEventArgs e)
         {
-            this.TriggerCommand.Execute();
+            //this.TriggerCommand.Execute();
             this.Stopwatch.Restart();
         }
     }
