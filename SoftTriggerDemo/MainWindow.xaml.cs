@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -43,7 +44,7 @@ namespace SoftTriggerDemo
         private CStPixelFormatConverter PixelFormatConverter { get; }
         private ICommand TriggerCommand { get; }
         private Stopwatch Stopwatch { get; } = new Stopwatch();
-
+        private int ImageCounter { get; set; }
         public void Dispose()
         {
             this.Device.AcquisitionStop();
@@ -92,17 +93,36 @@ namespace SoftTriggerDemo
                 var bgr8Image = this.ImageBuffer.GetIStImage();
 
                 var image = BitmapSource.Create(
-                    (int) rawImage.ImageWidth,
-                    (int) rawImage.ImageHeight,
+                    (int)rawImage.ImageWidth,
+                    (int)rawImage.ImageHeight,
                     96,
                     96,
                     PixelFormats.Bgr24,
                     null,
                     bgr8Image.GetByteArray(),
-                    (int) bgr8Image.ImageLinePitch);
+                    (int)bgr8Image.ImageLinePitch);
 
                 image.Freeze();
 
+                var frame = BitmapFrame.Create(image);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(frame);
+
+                if (!Directory.Exists("captures"))
+                {
+                    Directory.CreateDirectory("captures");
+                }
+
+                var fileName = $"captures/{this.ImageCounter:0000}.png";
+                ++this.ImageCounter;
+
+                using (var stream = File.Create(fileName))
+                {
+                    encoder.Save(stream);
+                }
+
+                this.Dispatcher.Invoke(() => SaveFileNameText.Text = $"Saved: {fileName}");
+                
                 this.Dispatcher.Invoke(() => CapturedImage.Source = image);
             }
         }

@@ -12,6 +12,9 @@
                     Click="TriggerButton_Click">TRIGGER</Button>
             <TextBlock x:Name="LatencyText"
                        VerticalAlignment="Center" />
+            <TextBlock x:Name="SaveFileNameText"
+                       Margin="16,0,0,0"
+                       VerticalAlignment="Center" />
         </DockPanel>
         <Border BorderThickness="1"
                 BorderBrush="DarkGray"
