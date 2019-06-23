@@ -27,6 +27,7 @@ namespace SoftTriggerDemo
 
             var nodeMap = this.Device.GetRemoteIStPort().GetINodeMap();
             Trace.Assert(nodeMap.SetEnumValue("TriggerSelector", "FrameStart"));
+            //Trace.Assert(nodeMap.SetEnumValue("TriggerMode", "Off"));
             Trace.Assert(nodeMap.SetEnumValue("TriggerMode", "On"));
             Trace.Assert(nodeMap.SetEnumValue("TriggerSource", "Line0"));
             //this.TriggerCommand = nodeMap.GetNode<ICommand>("TriggerSoftware");
