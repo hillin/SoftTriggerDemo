@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -9,11 +10,60 @@ using Sentech.StApiDotNET;
 
 namespace SoftTriggerDemo
 {
+    public class BitmapSaveInfo
+    {
+
+        private string _fileName;
+        private BitmapSource _bitmap;
+
+        public string FileName { get => _fileName; set => _fileName = value; }
+        public BitmapSource Bitmap { get => _bitmap; set => _bitmap = value; }
+
+        public BitmapSaveInfo(BitmapSource bitmap, string fileName)
+        {
+            _fileName = fileName;
+            _bitmap = bitmap;
+        }
+    }
+    public class AsyncSaveBitmapTask {
+        private ConcurrentQueue<BitmapSaveInfo> queue;
+        private BitmapSaveInfo bsi = null;
+        public AsyncSaveBitmapTask()
+        {
+            queue = new ConcurrentQueue<BitmapSaveInfo>();
+        }
+        public void Enqueue(BitmapSaveInfo bsi)
+        {
+            queue.Enqueue(bsi);
+        }
+        public void Dequeue()
+        {
+            if (queue.TryDequeue(out bsi))
+            {
+                var frame = BitmapFrame.Create(bsi.Bitmap);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(frame);
+
+                using (var stream = File.Create(bsi.FileName))
+                {
+                    encoder.Save(stream);
+                }
+            }
+        }
+        public int ImagesRemain
+        {
+            get
+            {
+                return queue.Count;
+            }
+        }
+    }
     public partial class MainWindow : IDisposable
     {
         public MainWindow()
         {
             this.InitializeComponent();
+            this.TaskAsyncSaveBmp = new AsyncSaveBitmapTask();
 
             this.Api = new CStApiAutoInit();
             this.SentechSystem = new CStSystem(eStSystemVendor.Sentech);
@@ -35,8 +85,11 @@ namespace SoftTriggerDemo
             this.DataStream.RegisterCallbackMethod(this.OnCallback);
             this.DataStream.StartAcquisition();
             this.Device.AcquisitionStart();
+
+            //
         }
 
+        private AsyncSaveBitmapTask TaskAsyncSaveBmp { get; }
         private CStSystem SentechSystem { get; }
         private CStDataStream DataStream { get; }
         private CStDevice Device { get; }
@@ -46,6 +99,7 @@ namespace SoftTriggerDemo
         private ICommand TriggerCommand { get; }
         private Stopwatch Stopwatch { get; } = new Stopwatch();
         private int ImageCounter { get; set; }
+
         public void Dispose()
         {
             this.Device.AcquisitionStop();
@@ -117,10 +171,12 @@ namespace SoftTriggerDemo
                 var fileName = $"captures/{this.ImageCounter:0000}.png";
                 ++this.ImageCounter;
 
+                /*
                 using (var stream = File.Create(fileName))
                 {
                     encoder.Save(stream);
-                }
+                }*/
+                this.TaskAsyncSaveBmp.Enqueue(new BitmapSaveInfo(image, fileName));
 
                 this.Dispatcher.Invoke(() => SaveFileNameText.Text = $"Saved: {fileName}");
                 
@@ -131,7 +187,14 @@ namespace SoftTriggerDemo
         private void TriggerButton_Click(object sender, RoutedEventArgs e)
         {
             //this.TriggerCommand.Execute();
-            this.Stopwatch.Restart();
+            //this.Stopwatch.Restart();
+            
+            var qImg = this.TaskAsyncSaveBmp.ImagesRemain;
+            
+            for (var countIndex = 0; countIndex < qImg; countIndex++) {
+                this.Dispatcher.Invoke(() => SaveFileNameText.Text = $"Remain: {qImg}");
+                this.TaskAsyncSaveBmp.Dequeue();
+            }
         }
     }
 }
